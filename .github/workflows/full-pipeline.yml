@@ -40,16 +40,26 @@ jobs:
         
     - name: Wait for Pods to be Ready
       run: |
-        kubectl wait --for=condition=ready pod -l app=backend -n my-namespace --timeout=300s
-        kubectl wait --for=condition=ready pod -l app=frontend -n my-namespace --timeout=300s
-        kubectl wait --for=condition=ready pod -l app=nginx -n my-namespace --timeout=300s
+        kubectl wait --for=condition=ready pod -l app=backend -n my-namespace --timeout=60s
+        kubectl wait --for=condition=ready pod -l app=frontend -n my-namespace --timeout=60s
+        kubectl wait --for=condition=ready pod -l app=nginx -n my-namespace --timeout=60s
         
     - name: See pods and deployments
       run: |
         kubectl get pods -n my-namespace
         kubectl get deploy -n my-namespace
-
-    - name: Expose Frontend
+        
+    - name: Get localhost.run URL
       run: |
-        kubectl port-forward svc/nginx-service -n my-namespace 8080:80 &
-        echo "Access Frontend at: http://localhost:8080"
+        # Fetch the public URL from localhost.run and set it as an output
+        FRONTEND_URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
+        echo "Frontend accessible at: $FRONTEND_URL"
+        BACKEND_URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[1].public_url')
+        echo "Backend accessible at: $BACKEND_URL"
+        echo "FRONTEND_URL=$FRONTEND_URL" >> $GITHUB_ENV
+        echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_ENV
+
+    - name: Output Public URL
+      run: |
+        echo "Access Frontend at: ${{ env.FRONTEND_URL }}"
+        echo "Access Backend at: ${{ env.BACKEND_URL }}"

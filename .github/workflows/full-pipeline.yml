@@ -24,12 +24,38 @@ jobs:
     - name: Build Docker Images
       run: |
         eval $(minikube docker-env)
+        docker build -t nginx-test:1.19 .
         docker build -t backend:latest ./backend
         docker build -t frontend:latest ./frontend
+
+    - name: Scan Docker Images for Vulnerabilities
+      run: |
+        docker scout recommendations local://frontend:latest
+        docker scout recommendations local://backend:latest
+        docker scout recommendations local://nginx-test:1.19
+        
+    - name: Load image in minikube
+      run: |
+        minikube image load backend:latest
+        minikube image load frontend:latest
+        minikube image load nginx-test:1.19
+
+    - name: Install kubectl
+      run: |
+        curl -LO "https://dl.k8s.io/release/v1.24.0/bin/linux/amd64/kubectl"
+        chmod +x ./kubectl
+        sudo mv ./kubectl /usr/local/bin/kubectl
+        kubectl version --client
+
 
     - name: Create Namespace
       run: |
         kubectl create namespace my-namespace || echo "Namespace already exists"
+        minikube start
+
+    - name: Use image from local
+      run: |
+        eval $(minikube -p minikube docker-env)
 
     - name: Apply Kubernetes Resources
       run: |

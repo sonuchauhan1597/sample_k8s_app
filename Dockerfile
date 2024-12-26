@@ -6,11 +6,10 @@ LABEL maintainer="your-email@example.com"
 LABEL version="1.19"
 LABEL description="Nginx 1.19 with vulnerability scanning enabled"
 
-# Set up a directory for Nginx config if needed
-RUN mkdir /etc/nginx/conf.d
 
 # Copy custom Nginx configuration (if you have any custom configurations)
 # COPY nginx.conf /etc/nginx/nginx.conf
+
 COPY ./frontend /usr/share/nginx/html
 
 # Expose necessary ports

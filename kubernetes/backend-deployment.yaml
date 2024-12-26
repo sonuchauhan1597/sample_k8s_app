@@ -18,3 +18,4 @@ spec:
         image: backend:latest
         ports:
         - containerPort: 5000
+        imagePullPolicy: IfNotPresent

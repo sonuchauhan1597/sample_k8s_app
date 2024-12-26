@@ -1,23 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>LocalStack EKS Runner</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Operations</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+        }
+        select, button {
+            margin: 0.5em;
+        }
+    </style>
 </head>
 <body>
-    <h1>EKS Deployment Runner</h1>
-    <button id="run-pipeline">Run Pipeline</button>
-    <pre id="output"></pre>
+    <h1>Invoke Python Code</h1>
+    <label for="operation">Choose an operation:</label>
+    <select id="operation">
+        <option value="sum_even_fibonacci">Sum of Even Fibonacci Numbers</option>
+        <option value="intersection_sorted_arrays">Intersection of Sorted Arrays</option>
+        <option value="decimal_digit_transformation">Decimal Digit Transformation</option>
+        <option value="text_manipulation">Text Manipulation</option>
+    </select>
+    <button id="run">Run</button>
+    <div id="result" style="margin-top: 1em;"></div>
 
     <script>
-        document.getElementById("run-pipeline").addEventListener("click", () => {
-            fetch("http://localhost:5000/run-pipeline", { method: "POST" })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById("output").textContent = JSON.stringify(data, null, 2);
-                })
-                .catch(err => {
-                    document.getElementById("output").textContent = `Error: ${err}`;
-                });
+        document.getElementById('run').addEventListener('click', async () => {
+            const operation = document.getElementById('operation').value;
+            const response = await fetch(`http://localhost:5000/run?operation=${operation}`);
+            const result = await response.text();
+            document.getElementById('result').innerText = `Result: ${result}`;
         });
     </script>
 </body>

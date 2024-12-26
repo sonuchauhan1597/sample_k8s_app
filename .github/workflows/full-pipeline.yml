@@ -1,4 +1,4 @@
-name: Full Pipeline with Public Deployment
+name: Full Pipeline Without ngrok
 
 on:
   push:
@@ -39,12 +39,9 @@ jobs:
         kubectl apply -f ./kubernetes/statefulset.yaml
         kubectl apply -f ./kubernetes/eks-deploy.yaml
 
-    - name: Expose Public URL (ngrok)
+    - name: Expose Public Access
       run: |
-        docker run -d --name ngrok \
-          -e "NGROK_AUTHTOKEN=${{ secrets.NGROK_TOKEN }}" \
-          -p 4040:4040 wernight/ngrok ngrok http 8000
-
-    - name: Display Public URL
-      run: |
-        echo "Access the application at: $(curl -s localhost:4040/api/tunnels | jq -r .tunnels[0].public_url)"
+        kubectl port-forward svc/nginx-service 8080:80 &
+        kubectl port-forward svc/backend-service 5000:5000 &
+        echo "Access Frontend at: http://localhost:8080"
+        echo "Access Backend at: http://localhost:5000"

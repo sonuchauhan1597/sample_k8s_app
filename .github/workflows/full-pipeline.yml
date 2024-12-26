@@ -34,17 +34,17 @@ jobs:
         wget https://github.com/aquasecurity/trivy/releases/download/v0.25.0/trivy_0.25.0_Linux-64bit.deb
         sudo dpkg -i trivy_0.25.0_Linux-64bit.deb
 
-    - name: Scan Docker image with Trivy
-      run: |
-        trivy image frontend:latest
-        trivy image backend:latest
-        trivy image nginx-test:1.19
-
     - name: Load image in minikube
       run: |
         minikube image load backend:latest
         minikube image load frontend:latest
         minikube image load nginx-test:1.19
+        
+    - name: Scan Docker image with Trivy
+      run: |
+        trivy image frontend:latest
+        trivy image backend:latest
+        trivy image nginx-test:1.19
 
     - name: Install kubectl
       run: |

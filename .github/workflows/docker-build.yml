@@ -1,0 +1,44 @@
+name: Docker Build and Deployment Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 * * * *'  # Run every hour
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build Docker image
+      run: |
+        docker build -t nginx:latest .
+
+    - name: Run vulnerability scan with Trivy
+      uses: aquasecurity/trivy-action@v0.3.0
+      with:
+        image-ref: nginx:latest
+
+    - name: Push image to Docker Hub
+      run: |
+        docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        docker tag nginx:latest your-docker-repo/nginx:latest
+        docker push your-docker-repo/nginx:latest
+
+    - name: Deploy to LocalStack EKS (Mock)
+      run: |
+        # Set up LocalStack
+        docker run -d -e DOCKER_HOST=unix:///var/run/docker.sock -p 4566:4566 -p 4510:4510 localstack/localstack
+
+        # Set AWS CLI to use LocalStack
+        aws --endpoint-url=http://localhost:4566 eks create-cluster --name mock-cluster --region us-east-1 --role-arn arn:aws:iam::000000000000:role/mock-role --resources-vpc-config subnetIds=subnet-12345678,securityGroupIds=sg-12345678
+
+        # Deploy with kubectl
+        kubectl apply -f kubernetes/nginx-deployment.yaml

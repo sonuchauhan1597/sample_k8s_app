@@ -37,6 +37,7 @@ jobs:
 
     - name: Scan Local Docker Images with Trivy
       run: |
+        eval $(minikube docker-env)
         trivy image backend:latest
         trivy image frontend:latest
         trivy image nginx-test:1.19

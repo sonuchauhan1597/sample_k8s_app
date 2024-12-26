@@ -1,0 +1,50 @@
+name: Full Pipeline with Public Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Start LocalStack
+      run: |
+        docker run -d --name localstack -p 4566:4566 -p 4510:4510 localstack/localstack
+        sleep 10
+
+    - name: Create Mocked EKS Cluster
+      run: |
+        aws --endpoint-url=http://localhost:4566 eks create-cluster \
+          --name mock-cluster \
+          --role-arn arn:aws:iam::000000000000:role/mock-role \
+          --resources-vpc-config subnetIds=subnet-12345678,securityGroupIds=sg-12345678
+
+    - name: Build Backend Docker Image
+      run: |
+        docker build -t backend:latest ./backend
+
+    - name: Build Frontend Docker Image
+      run: |
+        docker build -t frontend:latest ./frontend
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl apply -f ./kubernetes/statefulset.yaml
+        kubectl apply -f ./kubernetes/eks-deploy.yaml
+
+    - name: Expose Public URL (ngrok)
+      run: |
+        docker run -d --name ngrok \
+          -e "NGROK_AUTHTOKEN=${{ secrets.NGROK_TOKEN }}" \
+          -p 4040:4040 wernight/ngrok ngrok http 8000
+
+    - name: Display Public URL
+      run: |
+        echo "Access the application at: $(curl -s localhost:4040/api/tunnels | jq -r .tunnels[0].public_url)"

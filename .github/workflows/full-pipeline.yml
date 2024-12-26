@@ -37,6 +37,17 @@ jobs:
         kubectl apply -f ./kubernetes/frontend-deployment.yaml
         kubectl apply -f ./kubernetes/nginx-deployment.yaml
         kubectl apply -f ./kubernetes/nginx-service.yaml
+        
+    - name: Wait for Pods to be Ready
+      run: |
+        kubectl wait --for=condition=ready pod -l app=backend -n my-namespace --timeout=300s
+        kubectl wait --for=condition=ready pod -l app=frontend -n my-namespace --timeout=300s
+        kubectl wait --for=condition=ready pod -l app=nginx -n my-namespace --timeout=300s
+        
+    - name: See pods and deployments
+      run: |
+        kubectl get pods -n my-namespace
+        kubectl get deploy -n my-namespace
 
     - name: Expose Frontend
       run: |

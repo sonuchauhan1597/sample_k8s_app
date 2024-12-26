@@ -11,6 +11,7 @@ RUN mkdir /etc/nginx/conf.d
 
 # Copy custom Nginx configuration (if you have any custom configurations)
 # COPY nginx.conf /etc/nginx/nginx.conf
+COPY ./frontend /usr/share/nginx/html
 
 # Expose necessary ports
 EXPOSE 80 443

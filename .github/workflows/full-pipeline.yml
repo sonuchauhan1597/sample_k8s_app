@@ -18,33 +18,27 @@ jobs:
         curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
         chmod +x minikube-linux-amd64
         sudo mv minikube-linux-amd64 /usr/local/bin/minikube
-        minikube start
+        minikube start --driver=docker
         alias kubectl="minikube kubectl --"
 
     - name: Build Docker Images
       run: |
-        eval $(minikube docker-env)
-        docker build -t nginx-test:1.19 .
+        eval $(minikube docker-env)  # Ensure Minikube's Docker daemon is used
         docker build -t backend:latest ./backend
         docker build -t frontend:latest ./frontend
-        
+        docker build -t nginx-test:1.19 .  # Assuming nginx Dockerfile is in the root
+
     - name: Install Trivy
       run: |
         sudo apt-get install -y wget
         wget https://github.com/aquasecurity/trivy/releases/download/v0.25.0/trivy_0.25.0_Linux-64bit.deb
         sudo dpkg -i trivy_0.25.0_Linux-64bit.deb
 
-    - name: Load image in minikube
+    - name: Scan Local Docker Images with Trivy
       run: |
-        minikube image load docker.io/library/backend:latest
-        minikube image load docker.io/library/frontend:latest
-        minikube image load docker.io/library/nginx-test:1.19
-        
-    - name: Scan Docker image with Trivy
-      run: |
-        trivy image docker.io/library/frontend:latest
-        trivy image docker.io/library/backend:latest
-        trivy image docker.io/library/nginx-test:1.19
+        trivy image backend:latest
+        trivy image frontend:latest
+        trivy image nginx-test:1.19
 
     - name: Install kubectl
       run: |
@@ -53,15 +47,9 @@ jobs:
         sudo mv ./kubectl /usr/local/bin/kubectl
         kubectl version --client
 
-
     - name: Create Namespace
       run: |
         kubectl create namespace my-namespace || echo "Namespace already exists"
-        minikube start
-
-    - name: Use image from local
-      run: |
-        eval $(minikube -p minikube docker-env)
 
     - name: Apply Kubernetes Resources
       run: |
@@ -69,17 +57,25 @@ jobs:
         kubectl apply -f ./kubernetes/frontend-deployment.yaml
         kubectl apply -f ./kubernetes/nginx-deployment.yaml
         kubectl apply -f ./kubernetes/nginx-service.yaml
-        
+
     - name: Wait for Pods to be Ready
       run: |
         kubectl wait --for=condition=ready pod -l app=backend -n my-namespace --timeout=60s
         kubectl wait --for=condition=ready pod -l app=frontend -n my-namespace --timeout=60s
         kubectl wait --for=condition=ready pod -l app=nginx -n my-namespace --timeout=60s
-        
+
     - name: See pods and deployments
       run: |
         kubectl get pods -n my-namespace
         kubectl get deploy -n my-namespace
+
+    - name: Expose Services (Minikube)
+      run: |
+        kubectl port-forward svc/nginx-service 8080:80 &
+        kubectl port-forward svc/backend-service 5000:5000 &
+        echo "Access Frontend at: http://localhost:8080"
+        echo "Access Backend at: http://localhost:5000"
+
         
     - name: Get localhost.run URL
       run: |

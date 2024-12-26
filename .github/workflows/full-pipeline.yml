@@ -71,25 +71,24 @@ jobs:
         kubectl get pods -n my-namespace
         kubectl get deploy -n my-namespace
 
-    - name: Expose Services (Minikube)
+    - name: Expose Services via localhost.run
       run: |
-        kubectl port-forward svc/nginx-service 8080:80 &
-        kubectl port-forward svc/backend-service 5000:5000 &
-        echo "Access Frontend at: http://localhost:8080"
-        echo "Access Backend at: http://localhost:5000"
+        FRONTEND_TUNNEL=$(curl -s -X POST http://localhost.run -d "port=30001") # Replace with actual frontend NodePort
+        BACKEND_TUNNEL=$(curl -s -X POST http://localhost.run -d "port=30002") # Replace with actual backend NodePort
+        echo "Frontend URL: $FRONTEND_TUNNEL"
+        echo "Backend URL: $BACKEND_TUNNEL"
+        echo "FRONTEND_URL=$FRONTEND_TUNNEL" >> $GITHUB_ENV
+        echo "BACKEND_URL=$BACKEND_TUNNEL" >> $GITHUB_ENV
 
-        
-    - name: Get localhost.run URL
-      run: |
-        # Fetch the public URL from localhost.run and set it as an output
-        FRONTEND_URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
-        echo "Frontend accessible at: $FRONTEND_URL"
-        BACKEND_URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[1].public_url')
-        echo "Backend accessible at: $BACKEND_URL"
-        echo "FRONTEND_URL=$FRONTEND_URL" >> $GITHUB_ENV
-        echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_ENV
-
-    - name: Output Public URL
+    - name: Output Public URLs
       run: |
         echo "Access Frontend at: ${{ env.FRONTEND_URL }}"
         echo "Access Backend at: ${{ env.BACKEND_URL }}"
+
+    - name: Curl Frontend and Backend URLs for verification
+      run: |
+        echo "Verifying Frontend URL..."
+        curl -s "${{ env.FRONTEND_URL }}"
+        
+        echo "Verifying Backend URL..."
+        curl -s "${{ env.BACKEND_URL }}"

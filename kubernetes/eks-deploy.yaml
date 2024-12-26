@@ -1,19 +1,40 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend-deployment
+  name: python-backend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: backend
+      app: python-backend
   template:
     metadata:
       labels:
-        app: backend
+        app: python-backend
     spec:
       containers:
       - name: backend
         image: backend:latest
         ports:
         - containerPort: 5000
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: frontend:latest
+        ports:
+        - containerPort: 80

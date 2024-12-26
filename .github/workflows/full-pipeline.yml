@@ -27,13 +27,19 @@ jobs:
         docker build -t nginx-test:1.19 .
         docker build -t backend:latest ./backend
         docker build -t frontend:latest ./frontend
-
-    - name: Scan Docker Images for Vulnerabilities
-      run: |
-        docker scan recommendations local://frontend:latest
-        docker scan recommendations local://backend:latest
-        docker scan recommendations local://nginx-test:1.19
         
+    - name: Install Trivy
+      run: |
+        sudo apt-get install -y wget
+        wget https://github.com/aquasecurity/trivy/releases/download/v0.25.0/trivy_0.25.0_Linux-64bit.deb
+        sudo dpkg -i trivy_0.25.0_Linux-64bit.deb
+
+    - name: Scan Docker image with Trivy
+      run: |
+        trivy image frontend:latest
+        trivy image backend:latest
+        trivy image nginx-test:1.19
+
     - name: Load image in minikube
       run: |
         minikube image load backend:latest

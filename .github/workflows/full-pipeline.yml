@@ -36,15 +36,15 @@ jobs:
 
     - name: Load image in minikube
       run: |
-        minikube image load backend:latest
-        minikube image load frontend:latest
-        minikube image load nginx-test:1.19
+        minikube image load docker.io/library/backend:latest
+        minikube image load docker.io/library/frontend:latest
+        minikube image load docker.io/library/nginx-test:1.19
         
     - name: Scan Docker image with Trivy
       run: |
-        trivy image frontend:latest
-        trivy image backend:latest
-        trivy image nginx-test:1.19
+        trivy image docker.io/library/frontend:latest
+        trivy image docker.io/library/backend:latest
+        trivy image docker.io/library/nginx-test:1.19
 
     - name: Install kubectl
       run: |

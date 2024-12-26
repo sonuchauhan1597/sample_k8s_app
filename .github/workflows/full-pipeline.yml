@@ -30,9 +30,9 @@ jobs:
 
     - name: Scan Docker Images for Vulnerabilities
       run: |
-        docker scout recommendations local://frontend:latest
-        docker scout recommendations local://backend:latest
-        docker scout recommendations local://nginx-test:1.19
+        docker scan recommendations local://frontend:latest
+        docker scan recommendations local://backend:latest
+        docker scan recommendations local://nginx-test:1.19
         
     - name: Load image in minikube
       run: |

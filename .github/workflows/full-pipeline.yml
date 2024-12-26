@@ -14,6 +14,15 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
+    - name: Build Backend Docker Image
+      run: |
+        docker build -t backend:latest ./backend
+
+    - name: Build Frontend Docker Image
+      run: |
+        docker build -t frontend:latest ./frontend
+
+
     - name: Start LocalStack
       run: |
         docker run -d --name localstack -p 4566:4566 -p 4510:4510 -v /tmp/localstack:/var/lib/localstack localstack/localstack
@@ -39,15 +48,7 @@ jobs:
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         chmod +x ./kubectl
         sudo mv ./kubectl /usr/local/bin/kubectl
-
-    - name: Build Backend Docker Image
-      run: |
-        docker build -t backend:latest ./backend
-
-    - name: Build Frontend Docker Image
-      run: |
-        docker build -t frontend:latest ./frontend
-
+        
     - name: Deploy Kubernetes Resources
       run: |
         kubectl apply -f ./kubernetes/statefulset.yaml

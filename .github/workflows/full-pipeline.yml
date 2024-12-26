@@ -1,67 +1,44 @@
-name: Full Pipeline Without ngrok
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build-deploy:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Build Backend Docker Image
+    - name: Setup Minikube
       run: |
-        docker build -t backend:latest ./backend
+        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        chmod +x minikube-linux-amd64
+        sudo mv minikube-linux-amd64 /usr/local/bin/minikube
+        minikube start
+        alias kubectl="minikube kubectl --"
 
-    - name: Build Frontend Docker Image
+    - name: Build Docker Images
       run: |
+        eval $(minikube docker-env)
+        docker build -t backend:latest ./backend
         docker build -t frontend:latest ./frontend
 
+    - name: Create Namespace
+      run: |
+        kubectl create namespace my-namespace || echo "Namespace already exists"
 
-    - name: Start LocalStack
+    - name: Apply Kubernetes Resources
       run: |
-        docker run -d --name localstack -p 4566:4566 -p 4510:4510 -v /tmp/localstack:/var/lib/localstack localstack/localstack
-        sleep 10
+        kubectl apply -f ./kubernetes/backend-deployment.yaml
+        kubectl apply -f ./kubernetes/frontend-deployment.yaml
+        kubectl apply -f ./kubernetes/nginx-deployment.yaml
+        kubectl apply -f ./kubernetes/nginx-service.yaml
 
-    - name: Configure AWS CLI for LocalStack
+    - name: Expose Frontend
       run: |
-        export AWS_ACCESS_KEY_ID=test
-        export AWS_SECRET_ACCESS_KEY=test
-        aws --endpoint-url=http://localhost:4566 configure set default.region us-east-1
-        aws --endpoint-url=http://localhost:4566 configure set aws_access_key_id test
-        aws --endpoint-url=http://localhost:4566 configure set aws_secret_access_key test
-
-    - name: Create Mocked EKS Cluster
-      run: |
-        aws --endpoint-url=http://localhost:4566 eks create-cluster \
-          --name mock-cluster \
-          --role-arn arn:aws:iam::000000000000:role/mock-role \
-          --resources-vpc-config subnetIds=subnet-12345678,securityGroupIds=sg-12345678
-
-    - name: Install kubectl
-      run: |
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        chmod +x ./kubectl
-        sudo mv ./kubectl /usr/local/bin/kubectl
-        
-    - name: Deploy Kubernetes Resources
-      run: |
-        kubectl apply -f ./kubernetes/statefulset.yaml
-        kubectl apply -f ./kubernetes/eks-deploy.yaml
-
-    - name: Expose Services
-      run: |
-        nohup kubectl port-forward svc/nginx-service 8080:80 > /dev/null 2>&1 &
-        nohup kubectl port-forward svc/backend-service 5000:5000 > /dev/null 2>&1 &
+        kubectl port-forward svc/nginx-service -n my-namespace 8080:80 &
         echo "Access Frontend at: http://localhost:8080"
-        echo "Access Backend at: http://localhost:5000"
-
-    - name: Validate Deployment
-      run: |
-        curl -I http://localhost:8080
-        curl -I http://localhost:5000

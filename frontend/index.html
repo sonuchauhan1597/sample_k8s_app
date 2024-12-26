@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LocalStack EKS Runner</title>
+</head>
+<body>
+    <h1>EKS Deployment Runner</h1>
+    <button id="run-pipeline">Run Pipeline</button>
+    <pre id="output"></pre>
+
+    <script>
+        document.getElementById("run-pipeline").addEventListener("click", () => {
+            fetch("http://localhost:5000/run-pipeline", { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+                })
+                .catch(err => {
+                    document.getElementById("output").textContent = `Error: ${err}`;
+                });
+        });
+    </script>
+</body>
+</html>

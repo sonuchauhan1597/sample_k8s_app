@@ -105,14 +105,14 @@ jobs:
     - name: Expose Services via Minikube Tunnel and Test
       run: |
         # Start the Minikube service tunnel in the background and capture the output
-        nohup minikube service nginx-service -n my-namespace --url > minikube_service_url.txt &
+        minikube service nginx-service -n my-namespace --url > minikube_service_url.txt &
         
         # Wait for the tunnel to be fully established
         sleep 120
-
+        ls -lrt
         # Capture the output from the Minikube service tunnel URL file
         output=$(cat minikube_service_url.txt)
-
+        echo $output
         # Extract the HTTPS URLs for localhost (127.0.0.1)
         https_url1=$(echo "$output" | grep -Eo 'http://127.0.0.1:[0-9]+' | sed 's|http://|https://|' | head -n 1)
         https_url2=$(echo "$output" | grep -Eo 'http://127.0.0.1:[0-9]+' | sed 's|http://|https://|' | tail -n 1)

@@ -29,7 +29,7 @@
     <script>
         document.getElementById('run').addEventListener('click', async () => {
             const operation = document.getElementById('operation').value;
-            const response = await fetch(`http://localhost:5000/run?operation=${operation}`);
+            const response = await fetch(`http://backend-service:5000/run?operation=${operation}`);
             const result = await response.text();
             document.getElementById('result').innerText = `Result: ${result}`;
         });

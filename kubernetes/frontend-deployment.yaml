@@ -15,7 +15,23 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: frontend:latest
+        image: frontend:latest # Replace with your image name or registry path
         ports:
         - containerPort: 80
         imagePullPolicy: IfNotPresent
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: my-namespace
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+

@@ -102,21 +102,19 @@ jobs:
         kubectl get secrets -n my-namespace
         kubectl get svc -n my-namespace
 
-    - name: Verify Services with Curl
+    - name: Start Nginx Service
       run: |
-        BACKEND_URL=$(kubectl get svc backend-service -n my-namespace -o jsonpath='{.spec.clusterIP}')
-        FRONTEND_URL=$(kubectl get svc frontend-service -n my-namespace -o jsonpath='{.spec.clusterIP}')
-        
-        echo "Verifying Backend Service"
-        curl http://$BACKEND_URL:5000/health  # Replace with actual backend endpoint
-        
-        echo "Verifying Frontend Service"
-        curl http://$FRONTEND_URL  # Replace with actual frontend endpoint
+        minikube service nginx-service -n my-namespace --url > nginx_url.txt
+        echo "Service URL captured: $(cat nginx_url.txt)"
 
-    - name: Expose NGINX Service and Verify HTTPS
+    - name: Test Nginx Service
       run: |
-        # Expose NGINX service and get tunnel URL
-        TUNNEL_URL=$(minikube service nginx-service -n my-namespace --url)
-        
-        echo "Verifying NGINX Service with HTTPS"
-        curl -k $TUNNEL_URL/index.html  # Use -k to bypass self-signed SSL errors
+        SERVICE_URL=$(cat nginx_url.txt)
+        echo "Testing URL: $SERVICE_URL"
+        curl -k $SERVICE_URL/index.html
+
+    - name: Debug Response
+      run: |
+        SERVICE_URL=$(cat nginx_url.txt)
+        echo "Testing full URL response..."
+        curl -v -k $SERVICE_URL

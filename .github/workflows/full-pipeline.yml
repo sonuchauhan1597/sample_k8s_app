@@ -107,14 +107,22 @@ jobs:
         minikube service nginx-service -n my-namespace --url > nginx_url.txt
         echo "Service URL captured: $(cat nginx_url.txt)"
 
-    - name: Test Nginx Service
+    - name: Convert URL to HTTPS
       run: |
-        SERVICE_URL=$(cat nginx_url.txt)
-        echo "Testing URL: $SERVICE_URL"
-        curl -k $SERVICE_URL/index.html
+        HTTP_URL=$(cat nginx_url.txt)
+        HTTPS_URL=$(echo $HTTP_URL | sed 's|http://|https://|')
+        echo "Converted to HTTPS URL: $HTTPS_URL"
+        echo $HTTPS_URL > https_url.txt
 
-    - name: Debug Response
+    - name: Test Nginx HTTPS Service
       run: |
-        SERVICE_URL=$(cat nginx_url.txt)
-        echo "Testing full URL response..."
-        curl -v -k $SERVICE_URL
+        HTTPS_URL=$(cat https_url.txt)
+        echo "Testing HTTPS URL: $HTTPS_URL"
+        curl -k $HTTPS_URL/index.html
+
+    - name: Debug HTTPS Response
+      run: |
+        HTTPS_URL=$(cat https_url.txt)
+        echo "Testing full HTTPS response..."
+        curl -v -k $HTTPS_URL
+

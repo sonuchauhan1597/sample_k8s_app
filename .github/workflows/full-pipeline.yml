@@ -108,7 +108,7 @@ jobs:
         nohup minikube service nginx-service -n my-namespace --url > minikube_service_url.txt &
         
         # Wait for the tunnel to be fully established
-        sleep 5
+        sleep 120
 
         # Capture the output from the Minikube service tunnel URL file
         output=$(cat minikube_service_url.txt)

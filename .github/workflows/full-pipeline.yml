@@ -130,3 +130,34 @@ jobs:
         # Print the modified URLs for debugging purposes
         echo "Modified Minikube Service URLs:"
         echo "$https_output"
+        
+    - name: Expose Backend Service via Minikube Tunnel and Test
+      run: |
+        # Start the Minikube service tunnel for the backend in the background and capture the output
+        nohup minikube service backend-service -n my-namespace --url > backend_service_url.txt &
+
+        # Wait for the tunnel to be fully established
+        sleep 120
+        ls -lrt
+        # Capture the output from the Minikube service tunnel URL file
+        output=$(cat backend_service_url.txt)
+        echo "Backend Service Output: $output"
+        
+        # Check if the output is empty and if so, provide an error message
+        if [ -z "$output" ]; then
+          echo "Error: minikube service did not return any output."
+          exit 1
+        fi
+
+        # Replace 'http' with 'https' in the captured output
+        https_output=$(echo "$output" | sed 's|http://|https://|g')
+
+        # Loop through each URL and run curl
+        echo "$https_output" | while read -r url; do
+          echo "Testing $url"
+          curl -k "$url/run?operation=sum_even_fibonacci" || echo "Failed to access $url"
+        done
+
+        # Print the modified URLs for debugging purposes
+        echo "Modified Minikube Backend Service URLs:"
+        echo "$https_output"

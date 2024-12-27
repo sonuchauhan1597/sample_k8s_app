@@ -52,43 +52,27 @@ jobs:
     - name: Create Namespace
       run: |
         kubectl create namespace my-namespace || echo "Namespace already exists"
+        kubectl create secret generic nginx-ssl --from-file=./certs/nginx.crt --from-file=./certs/nginx.key -n my-namespace
+        kubectl create configmap nginx-config --from-file=nginx.conf -n my-namespace
+        minikube start
 
     - name: Apply Kubernetes Resources
       run: |
-        kubectl apply -f ./kubernetes/backend-deployment.yaml
-        kubectl apply -f ./kubernetes/frontend-deployment.yaml
-        kubectl apply -f ./kubernetes/nginx-deployment.yaml
-        kubectl apply -f ./kubernetes/nginx-service.yaml
+        kubectl apply -f ./kubernetes
 
     - name: Wait for Pods to be Ready
       run: |
-        kubectl wait --for=condition=ready pod -l app=backend -n my-namespace --timeout=60s
-        kubectl wait --for=condition=ready pod -l app=frontend -n my-namespace --timeout=60s
-        kubectl wait --for=condition=ready pod -l app=nginx -n my-namespace --timeout=60s
+        kubectl wait --for=condition=ready pod -l app=backend -n my-namespace --timeout=10s
+        kubectl wait --for=condition=ready pod -l app=frontend -n my-namespace --timeout=10s
+        kubectl wait --for=condition=ready pod -l app=nginx -n my-namespace --timeout=10s
 
     - name: See pods and deployments
       run: |
         kubectl get pods -n my-namespace
         kubectl get deploy -n my-namespace
+        kubectl get secrets -n my-namespace
+        kubectl get svc -n my-namespace
 
     - name: Expose Services via localhost.run
       run: |
-        FRONTEND_TUNNEL=$(curl -s -X POST http://localhost.run -d "port=30001") # Replace with actual frontend NodePort
-        BACKEND_TUNNEL=$(curl -s -X POST http://localhost.run -d "port=30002") # Replace with actual backend NodePort
-        echo "Frontend URL: $FRONTEND_TUNNEL"
-        echo "Backend URL: $BACKEND_TUNNEL"
-        echo "FRONTEND_URL=$FRONTEND_TUNNEL" >> $GITHUB_ENV
-        echo "BACKEND_URL=$BACKEND_TUNNEL" >> $GITHUB_ENV
-
-    - name: Output Public URLs
-      run: |
-        echo "Access Frontend at: ${{ env.FRONTEND_URL }}"
-        echo "Access Backend at: ${{ env.BACKEND_URL }}"
-
-    - name: Curl Frontend and Backend URLs for verification
-      run: |
-        echo "Verifying Frontend URL..."
-        curl -s "${{ env.FRONTEND_URL }}"
-        
-        echo "Verifying Backend URL..."
-        curl -s "${{ env.BACKEND_URL }}"
+        minikube service nginx-service -n my-namespace

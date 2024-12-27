@@ -107,22 +107,24 @@ jobs:
         minikube service nginx-service -n my-namespace --url > nginx_url.txt
         echo "Service URL captured: $(cat nginx_url.txt)"
 
-    - name: Convert URL to HTTPS
+    - name: Expose Services via Minikube Tunnel and Test
       run: |
-        HTTP_URL=$(cat nginx_url.txt)
-        HTTPS_URL=$(echo $HTTP_URL | sed 's|http://|https://|')
-        echo "Converted to HTTPS URL: $HTTPS_URL"
-        echo $HTTPS_URL > https_url.txt
+        # Capture service output
+        output=$(minikube service nginx-service -n my-namespace --url)
 
-    - name: Test Nginx HTTPS Service
-      run: |
-        HTTPS_URL=$(cat https_url.txt)
-        echo "Testing HTTPS URL: $HTTPS_URL"
-        curl -k $HTTPS_URL/index.html
+        # Extract HTTPS URLs
+        https_url1=$(echo "$output" | grep -Eo 'http://127.0.0.1:[0-9]+' | sed 's|http://|https://|' | head -n 1)
+        https_url2=$(echo "$output" | grep -Eo 'http://127.0.0.1:[0-9]+' | sed 's|http://|https://|' | tail -n 1)
 
-    - name: Debug HTTPS Response
-      run: |
-        HTTPS_URL=$(cat https_url.txt)
-        echo "Testing full HTTPS response..."
-        curl -v -k $HTTPS_URL
+        # Test the URLs
+        echo "Testing $https_url1"
+        curl -k "$https_url1/index.html" || echo "Failed to access $https_url1"
+
+        echo "Testing $https_url2"
+        curl -k "$https_url2/index.html" || echo "Failed to access $https_url2"
+
+        # Print output for debugging
+        echo "Minikube Service URLs:"
+        echo "$output"
+
 

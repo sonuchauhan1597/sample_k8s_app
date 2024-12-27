@@ -113,17 +113,20 @@ jobs:
         # Capture the output from the Minikube service tunnel URL file
         output=$(cat minikube_service_url.txt)
         echo $output
-        # Extract the HTTPS URLs for localhost (127.0.0.1)
-        https_url1=$(echo "$output" | grep -Eo 'http://127.0.0.1:[0-9]+' | sed 's|http://|https://|' | head -n 1)
-        https_url2=$(echo "$output" | grep -Eo 'http://127.0.0.1:[0-9]+' | sed 's|http://|https://|' | tail -n 1)
+        # Check if the output is empty and if so, provide an error message
+        if [ -z "$output" ]; then
+          echo "Error: minikube service did not return any output."
+          exit 1
+        fi
 
-        # Test the URLs and echo the results
-        echo "Testing $https_url1"
-        # curl -k "$https_url1/index.html" || echo "Failed to access $https_url1"
+        # Replace 'http' with 'https' in the captured output
+        https_output=$(echo "$output" | sed 's|http://|https://|g')
 
-        echo "Testing $https_url2"
-        # curl -k "$https_url2/index.html" || echo "Failed to access $https_url2"
-
-        # Print the output for debugging purposes
-        echo "Minikube Service URLs:"
-        echo "$output"
+        # Loop through each URL and run curl
+        echo "$https_output" | while read -r url; do
+          echo "Testing $url"
+          curl -k "$url/index.html" || echo "Failed to access $url"
+        done
+        # Print the modified URLs for debugging purposes
+        echo "Modified Minikube Service URLs:"
+        echo "$https_output"

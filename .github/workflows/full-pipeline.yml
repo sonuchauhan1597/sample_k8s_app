@@ -58,10 +58,12 @@ jobs:
 
     - name: Apply Kubernetes Resources
       run: |
+        eval $(minikube docker-env)
         kubectl apply -f ./kubernetes
 
     - name: Wait for Pods to be Ready
       run: |
+        eval $(minikube docker-env)
         kubectl wait --for=condition=ready pod -l app=backend -n my-namespace --timeout=10s
         kubectl wait --for=condition=ready pod -l app=frontend -n my-namespace --timeout=10s
         kubectl wait --for=condition=ready pod -l app=nginx -n my-namespace --timeout=10s

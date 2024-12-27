@@ -101,30 +101,29 @@ jobs:
         kubectl get deploy -n my-namespace
         kubectl get secrets -n my-namespace
         kubectl get svc -n my-namespace
-
-    - name: Start Nginx Service
-      run: |
-        minikube service nginx-service -n my-namespace --url > nginx_url.txt
-        echo "Service URL captured: $(cat nginx_url.txt)"
-
+        
     - name: Expose Services via Minikube Tunnel and Test
       run: |
-        # Capture service output
-        output=$(minikube service nginx-service -n my-namespace --url)
+        # Start the Minikube service tunnel in the background and capture the output
+        nohup minikube service nginx-service -n my-namespace --url > minikube_service_url.txt &
+        
+        # Wait for the tunnel to be fully established
+        sleep 5
 
-        # Extract HTTPS URLs
+        # Capture the output from the Minikube service tunnel URL file
+        output=$(cat minikube_service_url.txt)
+
+        # Extract the HTTPS URLs for localhost (127.0.0.1)
         https_url1=$(echo "$output" | grep -Eo 'http://127.0.0.1:[0-9]+' | sed 's|http://|https://|' | head -n 1)
         https_url2=$(echo "$output" | grep -Eo 'http://127.0.0.1:[0-9]+' | sed 's|http://|https://|' | tail -n 1)
 
-        # Test the URLs
+        # Test the URLs and echo the results
         echo "Testing $https_url1"
         curl -k "$https_url1/index.html" || echo "Failed to access $https_url1"
 
         echo "Testing $https_url2"
         curl -k "$https_url2/index.html" || echo "Failed to access $https_url2"
 
-        # Print output for debugging
+        # Print the output for debugging purposes
         echo "Minikube Service URLs:"
         echo "$output"
-
-

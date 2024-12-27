@@ -119,10 +119,10 @@ jobs:
 
         # Test the URLs and echo the results
         echo "Testing $https_url1"
-        curl -k "$https_url1/index.html" || echo "Failed to access $https_url1"
+        # curl -k "$https_url1/index.html" || echo "Failed to access $https_url1"
 
         echo "Testing $https_url2"
-        curl -k "$https_url2/index.html" || echo "Failed to access $https_url2"
+        # curl -k "$https_url2/index.html" || echo "Failed to access $https_url2"
 
         # Print the output for debugging purposes
         echo "Minikube Service URLs:"

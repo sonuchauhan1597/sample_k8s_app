@@ -61,12 +61,39 @@ jobs:
         eval $(minikube docker-env)
         kubectl apply -f ./kubernetes
 
-    - name: Wait for Pods to be Ready
+    - name: Wait for Backend Pods
       run: |
-        eval $(minikube docker-env)
-        kubectl wait --for=condition=ready pod -l app=backend -n my-namespace --timeout=10s
-        kubectl wait --for=condition=ready pod -l app=frontend -n my-namespace --timeout=10s
-        kubectl wait --for=condition=ready pod -l app=nginx -n my-namespace --timeout=10s
+        echo "Waiting for backend pods to be ready..."
+        for i in {1..5}; do
+          kubectl wait --for=condition=ready pod -l app=backend -n my-namespace --timeout=10s && break
+          echo "Retrying backend pod readiness in 10 seconds..."
+          sleep 10
+        done
+
+    - name: Wait for Frontend Pods
+      run: |
+        echo "Waiting for frontend pods to be ready..."
+        for i in {1..5}; do
+          kubectl wait --for=condition=ready pod -l app=frontend -n my-namespace --timeout=10s && break
+          echo "Retrying frontend pod readiness in 10 seconds..."
+          sleep 10
+        done
+
+    - name: Wait for Nginx Pods
+      run: |
+        echo "Waiting for nginx pods to be ready..."
+        for i in {1..5}; do
+          kubectl wait --for=condition=ready pod -l app=nginx -n my-namespace --timeout=10s && break
+          echo "Retrying nginx pod readiness in 10 seconds..."
+          sleep 10
+        done
+
+    - name: Debug Pod Creation
+      run: |
+        echo "Listing all pods in namespace 'my-namespace'..."
+        kubectl get pods -n my-namespace -o wide
+        echo "Describing pods in namespace 'my-namespace'..."
+        kubectl describe pods -n my-namespace
 
     - name: See pods and deployments
       run: |
